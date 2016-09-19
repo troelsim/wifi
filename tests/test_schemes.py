@@ -28,11 +28,13 @@ iface wlan0-coffee inet dhcp
     wireless-essid Coffee WiFi
     wireless-channel auto
 
+auto wlan0-home
 iface wlan0-home inet dhcp
     wpa-ssid homewifi
     wpa-psk  2222222222222222222222222222222222222222222222222222222222222222
     wireless-channel auto
 
+auto wlan0-home
 iface wlan0-coffee2 inet dhcp
     wireless-essid Coffee 2
     wireless-channel auto
@@ -61,9 +63,12 @@ class TestSchemes(TestCase):
 
     def test_scheme_extraction(self):
         work, coffee, home, coffee2 = list(extract_schemes(NETWORK_INTERFACES_FILE))[:4]
+        self.assertEqual(len(list(extract_schemes(NETWORK_INTERFACES_FILE))), 6)
 
         assert work.name == 'work'
         assert work.options['wpa-ssid'] == 'workwifi'
+
+        assert home.auto == True
 
         assert coffee.name == 'coffee'
         assert coffee.options['wireless-essid'] == 'Coffee WiFi'
@@ -84,6 +89,12 @@ class TestSchemes(TestCase):
         })
 
         self.assertEqual(str(scheme), 'iface wlan0-test inet dhcp\n    wpa-ssid workwifi\n')
+
+    def test_auto(self):
+        scheme = self.Scheme('wlan0', 'test')
+        assert str(scheme) == 'iface wlan0-test inet dhcp\n'
+        scheme = self.Scheme('wlan0', 'test', auto=True)
+        assert str(scheme) == 'auto wlan0-test\niface wlan0-test inet dhcp\n'
 
     def test_find(self):
         work = self.Scheme.find('wlan0', 'work')

@@ -77,22 +77,24 @@ class Scheme(object):
             'interfaces': interfaces,
         })
 
-    def __init__(self, interface, name, options=None):
+    def __init__(self, interface, name, options=None, auto=False):
         self.interface = interface
         self.name = name
         self.options = options or {}
+        self.auto = auto
 
     def __str__(self):
         """
         Returns the representation of a scheme that you would need
         in the /etc/network/interfaces file.
         """
+        auto = "auto {}\n".format(self.iface) if self.auto else ''
         iface = "iface {interface}-{name} inet dhcp".format(**vars(self))
         options = ''.join("\n    {k} {v}".format(k=k, v=v) for k, v in self.options.items())
-        return iface + options + '\n'
+        return auto + iface + options + '\n'
 
     def __repr__(self):
-        return 'Scheme(interface={interface!r}, name={name!r}, options={options!r}'.format(**vars(self))
+        return 'Scheme(interface={interface!r}, name={name!r}, options={options!r}, auto={auto!r})'.format(**vars(self))
 
     @classmethod
     def all(cls):
@@ -140,6 +142,7 @@ class Scheme(object):
         """
         Deletes the configuration from the :attr:`interfaces` file.
         """
+        auto = "auto %s" % self.iface
         iface = "iface %s-%s inet dhcp" % (self.interface, self.name)
         content = ''
         with open(self.interfaces, 'r') as f:
@@ -149,7 +152,7 @@ class Scheme(object):
                     skip = False
                 elif line.strip() == iface:
                     skip = True
-                if not skip:
+                if not (skip or line.strip == auto):
                     content += line
         with open(self.interfaces, 'w') as f:
             f.write(content)
@@ -193,15 +196,23 @@ class Connection(object):
 
 
 scheme_re = re.compile(r'iface\s+(?P<interface>[^-]+)(?:-(?P<name>\S+))?')
+auto_re = re.compile(r'auto\s+(?P<interface>[^-]+)(?:-(?P<name>\S+))?')
 
 
 def extract_schemes(interfaces, scheme_class=Scheme):
     lines = interfaces.splitlines()
+    schemes = []
+    auto_schemes = []
     while lines:
         line = lines.pop(0)
 
         if line.startswith('#') or not line:
             continue
+
+        auto_match = auto_re.match(line)
+        if auto_match:
+            interface, name = auto_match.groups()
+            auto_schemes.append(name)
 
         match = scheme_re.match(line)
         if match:
@@ -216,5 +227,10 @@ def extract_schemes(interfaces, scheme_class=Scheme):
                 options[key] = value
 
             scheme = scheme_class(interface, scheme, options)
+            
+            schemes.append(scheme)
 
-            yield scheme
+    for scheme in schemes:
+        if scheme.name in auto_schemes:
+            scheme.auto = True
+        yield scheme
