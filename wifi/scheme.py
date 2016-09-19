@@ -1,5 +1,6 @@
 import re
 import itertools
+import time
 
 import subprocess
 from pbkdf2 import PBKDF2
@@ -168,16 +169,23 @@ class Scheme(object):
         args = list(itertools.chain.from_iterable(
             ('-o', '{k}={v}'.format(k=k, v=v)) for k, v in self.options.items()))
 
-        return [self.interface + '=' + self.iface] + args
+        return [self.interface + '=' + self.iface]
 
     def activate(self):
         """
         Connects to the network as configured in this scheme.
         """
 
-        subprocess.check_output(['/sbin/ifdown', self.interface], stderr=subprocess.STDOUT)
+        print "Running " + " ".join(['/sbin/ifdown', self.interface])
+        ifdown_output = subprocess.check_output(['/sbin/ifdown', self.interface], stderr=subprocess.STDOUT)
+        print "ifdown said:"
+        print ifdown_output.decode('utf-8')
+        time.sleep(2)
+        print "Running " + " ".join(['/sbin/ifup'] + self.as_args())
         ifup_output = subprocess.check_output(['/sbin/ifup'] + self.as_args(), stderr=subprocess.STDOUT)
         ifup_output = ifup_output.decode('utf-8')
+        print "ifup said:"
+        print ifup_output
 
         return self.parse_ifup_output(ifup_output)
 
