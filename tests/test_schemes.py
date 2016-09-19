@@ -28,13 +28,13 @@ iface wlan0-coffee inet dhcp
     wireless-essid Coffee WiFi
     wireless-channel auto
 
-auto wlan0-home
+auto wlan0=wlan0-home
 iface wlan0-home inet dhcp
     wpa-ssid homewifi
     wpa-psk  2222222222222222222222222222222222222222222222222222222222222222
     wireless-channel auto
 
-auto wlan0-home
+auto wlan0=wlan0-home
 iface wlan0-coffee2 inet dhcp
     wireless-essid Coffee 2
     wireless-channel auto
@@ -94,7 +94,7 @@ class TestSchemes(TestCase):
         scheme = self.Scheme('wlan0', 'test')
         assert str(scheme) == 'iface wlan0-test inet dhcp\n'
         scheme = self.Scheme('wlan0', 'test', auto=True)
-        assert str(scheme) == 'auto wlan0-test\niface wlan0-test inet dhcp\n'
+        assert str(scheme) == 'auto wlan0=wlan0-test\niface wlan0-test inet dhcp\n'
     
     def test_equality(self):
         scheme1 = self.Scheme('wlan0', 'test')

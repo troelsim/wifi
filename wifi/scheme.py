@@ -1,7 +1,7 @@
 import re
 import itertools
 
-import wifi.subprocess_compat as subprocess
+import subprocess
 from pbkdf2 import PBKDF2
 from wifi.utils import ensure_file_exists
 from wifi.exceptions import ConnectionError
@@ -88,7 +88,7 @@ class Scheme(object):
         Returns the representation of a scheme that you would need
         in the /etc/network/interfaces file.
         """
-        auto = "auto {}\n".format(self.iface) if self.auto else ''
+        auto = "auto {interface}={interface}-{name}\n".format(**vars(self)) if self.auto else ''
         iface = "iface {interface}-{name} inet dhcp".format(**vars(self))
         options = ''.join("\n    {k} {v}".format(k=k, v=v) for k, v in self.options.items())
         return auto + iface + options + '\n'
@@ -145,7 +145,7 @@ class Scheme(object):
         """
         Deletes the configuration from the :attr:`interfaces` file.
         """
-        auto = "auto %s" % self.iface
+        auto = "auto {interface}={interface}-{name}".format(**vars(self))
         iface = "iface %s-%s inet dhcp" % (self.interface, self.name)
         content = ''
         with open(self.interfaces, 'r') as f:
@@ -199,7 +199,7 @@ class Connection(object):
 
 
 scheme_re = re.compile(r'iface\s+(?P<interface>[^-]+)(?:-(?P<name>\S+))?')
-auto_re = re.compile(r'auto\s+(?P<interface>[^-]+)(?:-(?P<name>\S+))?')
+auto_re = re.compile(r'^auto\s+(?P<interface>[^-]+)=(?P<interface2>[^-]+)-(?P<name>\S+)')
 
 
 def extract_schemes(interfaces, scheme_class=Scheme):
@@ -214,8 +214,9 @@ def extract_schemes(interfaces, scheme_class=Scheme):
 
         auto_match = auto_re.match(line)
         if auto_match:
-            interface, name = auto_match.groups()
-            auto_schemes.append(name)
+            interface, interface2, name = auto_match.groups()
+            if interface == interface2:
+                auto_schemes.append(name)
 
         match = scheme_re.match(line)
         if match:
