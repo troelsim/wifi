@@ -95,10 +95,17 @@ class TestSchemes(TestCase):
         assert str(scheme) == 'iface wlan0-test inet dhcp\n'
         scheme = self.Scheme('wlan0', 'test', auto=True)
         assert str(scheme) == 'auto wlan0-test\niface wlan0-test inet dhcp\n'
+    
+    def test_equality(self):
+        scheme1 = self.Scheme('wlan0', 'test')
+        scheme2 = self.Scheme('wlan0', 'test', options={})
+        scheme3 = self.Scheme('wlan0', 'test', options={}, auto=True)
+        self.assertEqual(scheme1, scheme2)
+        self.assertNotEqual(scheme2, scheme3)
+        self.assertNotEqual(scheme1, scheme3)
 
     def test_find(self):
         work = self.Scheme.find('wlan0', 'work')
-
         assert work.options['wpa-ssid'] == 'workwifi'
 
     def test_delete(self):

@@ -96,6 +96,9 @@ class Scheme(object):
     def __repr__(self):
         return 'Scheme(interface={interface!r}, name={name!r}, options={options!r}, auto={auto!r})'.format(**vars(self))
 
+    def __eq__(self, other):
+        return vars(self) == vars(other)
+
     @classmethod
     def all(cls):
         """
