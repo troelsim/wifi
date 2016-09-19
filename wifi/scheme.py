@@ -121,12 +121,12 @@ class Scheme(object):
             return None
 
     @classmethod
-    def for_cell(cls, interface, name, cell, passkey=None):
+    def for_cell(cls, interface, name, cell, passkey=None, auto=False):
         """
         Intuits the configuration needed for a specific
         :class:`Cell` and creates a :class:`Scheme` for it.
         """
-        return cls(interface, name, configuration(cell, passkey))
+        return cls(interface, name, configuration(cell, passkey), auto=auto)
 
     def save(self):
         """
